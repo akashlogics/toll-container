@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Settings2, ClipboardList, Truck, Package,
   CheckCircle2, XCircle, Plus, Pencil, LogOut, Building2, ChevronRight,
   Ruler, HardHat, ClipboardCheck, IndianRupee, TrendingUp, TrendingDown,
-  Clock3, ShieldCheck, X, Trash2, ListChecks, Wallet, ArrowLeft
+  Clock3, ShieldCheck, X, Trash2, ListChecks, Wallet, ArrowLeft, Camera, BarChart3, Building
 } from "lucide-react";
 
 /* ============================== BRAND ============================== */
@@ -26,10 +26,10 @@ const uid = (p) => p + "_" + Math.random().toString(36).slice(2, 9);
 /* ============================== SEED DATA ============================== */
 
 const seedUsers = [
-  { id: "u1", name: "Kumar", role: "admin", username: "kumar", phone: "98940 00001", active: true, projectIds: ["p1"] },
-  { id: "u2", name: "Ganesh Babu", role: "manager", username: "ganesh", phone: "98940 00002", active: true, projectIds: ["p1"] },
+  { id: "u1", name: "Kumar", role: "admin", username: "kumar", phone: "98940 00001", active: true, projectIds: ["p1", "p2"] },
+  { id: "u2", name: "Ganesh Babu", role: "manager", username: "ganesh", phone: "98940 00002", active: true, projectIds: ["p1", "p2"] },
   { id: "u3", name: "Viji", role: "supervisor", username: "viji", phone: "98940 00003", active: true, projectIds: ["p1"], teamId: "t1" },
-  { id: "u4", name: "Murugan", role: "supervisor", username: "murugan", phone: "98940 00004", active: true, projectIds: ["p1"], teamId: "t1" },
+  { id: "u4", name: "Murugan", role: "supervisor", username: "murugan", phone: "98940 00004", active: true, projectIds: ["p1", "p2"], teamId: "t1" },
 ];
 
 const seedProject = {
@@ -46,6 +46,21 @@ const seedProject = {
     { id: "b6", code: "EM", desc: "Emulsion paint", unit: "Sq.m", rate: 65, qtyToDate: 3200, contractQty: 4800 },
   ],
 };
+
+const seedProject2 = {
+  id: "p2",
+  name: "Anna Nagar \u2013 Culvert Widening",
+  authority: "PWD",
+  period: "Jun 2026 \u2013 Dec 2026",
+  boqItems: [
+    { id: "c1", code: "1A", desc: "Earthwork excavation", unit: "Cu.m", rate: 210, qtyToDate: 410, contractQty: 900 },
+    { id: "c2", code: "2A", desc: "PCC bedding", unit: "Cu.m", rate: 4800, qtyToDate: 38, contractQty: 90 },
+    { id: "c3", code: "3A", desc: "RCC culvert slab", unit: "Cu.m", rate: 7200, qtyToDate: 22, contractQty: 60 },
+    { id: "c4", code: "4A", desc: "Guard stone fixing", unit: "No", rate: 350, qtyToDate: 60, contractQty: 160 },
+  ],
+};
+
+const seedProjects = [seedProject, seedProject2];
 
 const seedTeams = [{ id: "t1", name: "Viji Team", projectId: "p1" }];
 
@@ -74,6 +89,7 @@ const seedFieldConfig = {
     { id: "f_brd", label: "Breadth (B)", type: "number", required: true, core: true },
     { id: "f_hgt", label: "Height (H)", type: "number", required: false, core: true },
     { id: "f_rem", label: "Remarks", type: "text", required: false, core: true },
+    { id: "f_photo", label: "Site photo", type: "photo", required: false, core: false },
   ],
   labour: [
     { id: "f_mastri", label: "Mastri count", type: "number", required: true, core: true },
@@ -84,9 +100,13 @@ const seedFieldConfig = {
   equipment: [
     { id: "f_qty", label: "Hours / Qty used", type: "number", required: true, core: true },
     { id: "f_rate", label: "Rate override (\u20b9)", type: "number", required: false, core: true },
+    { id: "f_fuel_litres", label: "Fuel (litres)", type: "number", required: false, core: false },
+    { id: "f_fuel_amt", label: "Fuel bill amount (\u20b9)", type: "number", required: false, core: false },
+    { id: "f_fuel_photo", label: "Fuel bill photo", type: "photo", required: false, core: false },
   ],
   material: [
     { id: "f_mqty", label: "Quantity used", type: "number", required: true, core: true },
+    { id: "f_delivery_photo", label: "Delivery slip photo", type: "photo", required: false, core: false },
   ],
 };
 
@@ -111,7 +131,7 @@ const seedMaterialEntries = [
 ];
 
 const seedWageSettlements = [
-  { id: uid("ws"), teamId: "t1", weekLabel: "18\u201324 Jul 2026", mastriCount: 4, helperCount: 54, foodCount: 58, mastriRate: 1100, helperRate: 800, foodRate: 300, advance: 0, deduct: 0, tds: 650, total: 64350 },
+  { id: uid("ws"), projectId: "p1", teamId: "t1", weekLabel: "18\u201324 Jul 2026", mastriCount: 4, helperCount: 54, foodCount: 58, mastriRate: 1100, helperRate: 800, foodRate: 300, advance: 0, deduct: 0, tds: 650, total: 64350 },
 ];
 
 /* ============================== SMALL UI PARTS ============================== */
@@ -277,6 +297,7 @@ function RolePicker({ users, onPick }) {
 const NAV = {
   admin: [
     { key: "overview", label: "Overview", icon: LayoutDashboard },
+    { key: "portfolio", label: "Portfolio Overview", icon: BarChart3 },
     { key: "rates", label: "Projects & Rates", icon: IndianRupee },
     { key: "fields", label: "Field Settings", icon: Settings2 },
     { key: "team", label: "Team & Access", icon: Users },
@@ -293,9 +314,10 @@ const NAV = {
   ],
 };
 
-function Shell({ user, onLogout, children, active, setActive }) {
+function Shell({ user, onLogout, children, active, setActive, myProjects, currentProjectId, onSwitchProject }) {
   const items = NAV[user.role];
   const roleLabel = { admin: "Contractor / Admin", manager: "Manager", supervisor: "Supervisor" }[user.role];
+  const currentProject = myProjects.find((p) => p.id === currentProjectId) || myProjects[0];
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: BG }}>
       <aside className="w-60 shrink-0 hidden md:flex flex-col text-white" style={{ backgroundColor: NAVY }}>
@@ -304,7 +326,19 @@ function Shell({ user, onLogout, children, active, setActive }) {
             <Building2 size={18} color={GOLD_LT} />
             <span className="font-semibold text-sm tracking-wide">KUMAR &amp; CO.</span>
           </div>
-          <p className="text-[11px] text-white/50 mt-1">KTTRL \u2013 Section 1</p>
+          {myProjects.length > 1 ? (
+            <select
+              value={currentProjectId}
+              onChange={(e) => onSwitchProject(e.target.value)}
+              className="mt-2 w-full bg-white/10 border border-white/20 rounded-lg text-xs px-2 py-1.5 text-white"
+            >
+              {myProjects.map((p) => (
+                <option key={p.id} value={p.id} className="text-slate-800">{p.name}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-[11px] text-white/50 mt-1">{currentProject?.name}</p>
+          )}
         </div>
         <nav className="flex-1 py-4">
           {items.map((it) => (
@@ -340,6 +374,15 @@ function Shell({ user, onLogout, children, active, setActive }) {
             <LogOut size={13} /> Switch
           </button>
         </div>
+        {myProjects.length > 1 && (
+          <div className="md:hidden px-3 py-2 bg-white border-b">
+            <select value={currentProjectId} onChange={(e) => onSwitchProject(e.target.value)} className="w-full border border-slate-200 rounded-lg text-xs px-2 py-1.5">
+              {myProjects.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="md:hidden flex gap-1 overflow-x-auto px-3 py-2 bg-white border-b">
           {items.map((it) => (
             <button
@@ -362,18 +405,48 @@ function Shell({ user, onLogout, children, active, setActive }) {
 
 /* ============================== DYNAMIC FIELD RENDERING ============================== */
 
+function PhotoField({ value, onChange }) {
+  const inputId = useMemo(() => uid("ph"), []);
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onChange(reader.result);
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div>
+      {value ? (
+        <div className="flex items-center gap-3">
+          <img src={value} alt="attached" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+          <GhostButton tone="red" icon={Trash2} onClick={() => onChange("")}>Remove</GhostButton>
+        </div>
+      ) : (
+        <label htmlFor={inputId} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 cursor-pointer hover:border-[#B8862B] hover:text-[#B8862B]">
+          <Camera size={14} /> Attach photo
+        </label>
+      )}
+      <input id={inputId} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
+    </div>
+  );
+}
+
 function DynamicFields({ fields, values, setValues }) {
   return (
     <>
       {fields.map((f) => (
         <Field key={f.id} label={f.label} required={f.required}>
-          <input
-            type={f.type === "number" ? "number" : "text"}
-            className={inputCls}
-            value={values[f.id] ?? ""}
-            onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))}
-            placeholder={f.type === "number" ? "0" : ""}
-          />
+          {f.type === "photo" ? (
+            <PhotoField value={values[f.id] || ""} onChange={(v) => setValues((s) => ({ ...s, [f.id]: v }))} />
+          ) : (
+            <input
+              type={f.type === "number" ? "number" : "text"}
+              className={inputCls}
+              value={values[f.id] ?? ""}
+              onChange={(e) => setValues((v) => ({ ...v, [f.id]: e.target.value }))}
+              placeholder={f.type === "number" ? "0" : ""}
+            />
+          )}
         </Field>
       ))}
     </>
@@ -402,31 +475,34 @@ function computeIncome(project, measurementEntries) {
   return { income, perItem };
 }
 
-function computeExpense({ equipmentEntries, materialEntries, wageSettlements, equipmentList, materialsList }) {
+function computeExpense(projectId, { equipmentEntries, materialEntries, wageSettlements, equipmentList, materialsList }) {
   const equipCost = equipmentEntries
-    .filter((e) => e.status === "approved")
+    .filter((e) => e.status === "approved" && e.projectId === projectId)
     .reduce((sum, e) => {
       const eq = equipmentList.find((x) => x.id === e.equipmentId);
       const rate = Number(e.values.f_rate) || eq?.defaultRate || 0;
-      return sum + (Number(e.values.f_qty) || 0) * rate;
+      const fuel = Number(e.values.f_fuel_amt) || 0;
+      return sum + (Number(e.values.f_qty) || 0) * rate + fuel;
     }, 0);
   const materialCost = materialEntries
-    .filter((e) => e.status === "approved")
+    .filter((e) => e.status === "approved" && e.projectId === projectId)
     .reduce((sum, e) => {
       const mt = materialsList.find((x) => x.id === e.materialId);
       return sum + (Number(e.values.f_mqty) || 0) * (mt?.defaultUnitCost || 0);
     }, 0);
-  const wageCost = wageSettlements.reduce((sum, w) => sum + w.total, 0);
+  const wageCost = wageSettlements
+    .filter((w) => w.projectId === projectId)
+    .reduce((sum, w) => sum + w.total, 0);
   return { equipCost, materialCost, wageCost, total: equipCost + materialCost + wageCost };
 }
 
 function AdminOverview({ project, data }) {
   const { income, perItem } = computeIncome(project, data.measurementEntries);
-  const expense = computeExpense(data);
+  const expense = computeExpense(project.id, data);
   const profit = income - expense.total;
   return (
     <div>
-      <SectionTitle icon={LayoutDashboard} title="Overview" subtitle="Live figures for KTTRL \u2013 Section 1, based on approved entries only." />
+      <SectionTitle icon={LayoutDashboard} title="Overview" subtitle={`Live figures for ${project.name}, based on approved entries only.`} />
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2"><TrendingUp size={14} className="text-emerald-600" /> INCOME (BILLED)</div>
@@ -463,6 +539,95 @@ function AdminOverview({ project, data }) {
         </div>
       </Card>
       <p className="text-xs text-slate-400 mt-4">Demo data \u2014 figures update live as entries are approved. Not a real project record.</p>
+    </div>
+  );
+}
+
+function AdminPortfolio({ projects, data }) {
+  const rows = projects.map((p) => {
+    const { income } = computeIncome(p, data.measurementEntries);
+    const expense = computeExpense(p.id, data);
+    return { project: p, income, expense: expense.total, profit: income - expense.total };
+  });
+  const maxVal = Math.max(1, ...rows.map((r) => Math.max(r.income, r.expense)));
+  const totals = rows.reduce(
+    (acc, r) => ({ income: acc.income + r.income, expense: acc.expense + r.expense, profit: acc.profit + r.profit }),
+    { income: 0, expense: 0, profit: 0 }
+  );
+
+  return (
+    <div>
+      <SectionTitle icon={BarChart3} title="Portfolio Overview" subtitle="All your projects side by side \u2014 useful when a few are running at once." />
+
+      <div className="grid sm:grid-cols-3 gap-4 mb-6">
+        <Card className="p-5">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2"><TrendingUp size={14} className="text-emerald-600" /> TOTAL INCOME</div>
+          <p className="text-2xl font-bold" style={{ color: NAVY }}>{fmtINR(totals.income)}</p>
+        </Card>
+        <Card className="p-5">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2"><TrendingDown size={14} className="text-rose-600" /> TOTAL EXPENSE</div>
+          <p className="text-2xl font-bold" style={{ color: NAVY }}>{fmtINR(totals.expense)}</p>
+        </Card>
+        <Card className="p-5" style={{ borderColor: GOLD }}>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2"><IndianRupee size={14} style={{ color: GOLD }} /> TOTAL PROFIT</div>
+          <p className="text-2xl font-bold" style={{ color: GOLD }}>{fmtINR(totals.profit)}</p>
+        </Card>
+      </div>
+
+      <Card className="p-5 mb-6">
+        <h3 className="text-sm font-semibold mb-4" style={{ color: NAVY }}>Income vs. expense, by project</h3>
+        <div className="space-y-5">
+          {rows.map((r) => (
+            <div key={r.project.id}>
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="font-medium text-slate-700 flex items-center gap-1.5"><Building size={12} /> {r.project.name}</span>
+                <span className="text-slate-500">{r.project.authority}</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] w-14 text-slate-400">Income</span>
+                  <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-3 rounded-full bg-emerald-500" style={{ width: (r.income / maxVal) * 100 + "%" }} />
+                  </div>
+                  <span className="text-[11px] text-slate-500 w-24 text-right">{fmtINR(r.income)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] w-14 text-slate-400">Expense</span>
+                  <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-3 rounded-full bg-rose-400" style={{ width: (r.expense / maxVal) * 100 + "%" }} />
+                  </div>
+                  <span className="text-[11px] text-slate-500 w-24 text-right">{fmtINR(r.expense)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
+              <th className="px-4 py-3">Project</th>
+              <th className="px-4 py-3">Authority</th>
+              <th className="px-4 py-3">Income</th>
+              <th className="px-4 py-3">Expense</th>
+              <th className="px-4 py-3">Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.project.id} className="border-b border-slate-100 last:border-0">
+                <td className="px-4 py-2.5 font-medium text-slate-700">{r.project.name}</td>
+                <td className="px-4 py-2.5 text-slate-500">{r.project.authority}</td>
+                <td className="px-4 py-2.5">{fmtINR(r.income)}</td>
+                <td className="px-4 py-2.5">{fmtINR(r.expense)}</td>
+                <td className="px-4 py-2.5 font-medium" style={{ color: GOLD }}>{fmtINR(r.profit)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     </div>
   );
 }
@@ -567,6 +732,7 @@ function FieldSettingsPanel({ moduleKey, title, fields, setFieldConfig }) {
           <select className={inputCls + " w-28"} value={newType} onChange={(e) => setNewType(e.target.value)}>
             <option value="number">Number</option>
             <option value="text">Text</option>
+            <option value="photo">Photo</option>
           </select>
           <GhostButton onClick={addField} tone="green" icon={CheckCircle2}>Add</GhostButton>
           <GhostButton onClick={() => setAdding(false)}>Cancel</GhostButton>
@@ -594,9 +760,15 @@ function AdminFieldSettings({ fieldConfig, setFieldConfig }) {
   );
 }
 
-function AddEmployeeModal({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: "", role: "supervisor", phone: "", username: "" });
+function AddEmployeeModal({ onClose, onSave, projects, defaultProjectId }) {
+  const [form, setForm] = useState({ name: "", role: "supervisor", phone: "", username: "", projectIds: [defaultProjectId] });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const toggleProject = (pid) => {
+    setForm((f) => ({
+      ...f,
+      projectIds: f.projectIds.includes(pid) ? f.projectIds.filter((x) => x !== pid) : [...f.projectIds, pid],
+    }));
+  };
   return (
     <Modal title="Add new employee" onClose={onClose}>
       <Field label="Full name" required>
@@ -614,13 +786,24 @@ function AddEmployeeModal({ onClose, onSave }) {
       <Field label="Login username" required>
         <input className={inputCls} value={form.username} onChange={(e) => set("username", e.target.value)} placeholder="e.g. karthik" />
       </Field>
-      <p className="text-xs text-slate-400 mb-4">Assigned to KTTRL \u2013 Section 1 by default. A temporary password would be sent by SMS in the real system.</p>
+      <Field label="Assign to project(s)" required>
+        <div className="space-y-1.5">
+          {projects.map((p) => (
+            <label key={p.id} className="flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={form.projectIds.includes(p.id)} onChange={() => toggleProject(p.id)} />
+              {p.name}
+            </label>
+          ))}
+        </div>
+        <p className="text-[11px] text-slate-400 mt-1">Someone who works across more than one project \u2014 like Murugan \u2014 can be ticked into several here.</p>
+      </Field>
+      <p className="text-xs text-slate-400 mb-4">A temporary password would be sent by SMS in the real system.</p>
       <div className="flex justify-end gap-2">
         <GhostButton onClick={onClose}>Cancel</GhostButton>
         <PrimaryButton
           icon={Plus}
           onClick={() => {
-            if (!form.name.trim() || !form.username.trim()) return;
+            if (!form.name.trim() || !form.username.trim() || form.projectIds.length === 0) return;
             onSave(form);
           }}
         >
@@ -631,17 +814,18 @@ function AddEmployeeModal({ onClose, onSave }) {
   );
 }
 
-function AdminTeam({ users, setUsers }) {
+function AdminTeam({ users, setUsers, projects, currentProjectId }) {
   const [showAdd, setShowAdd] = useState(false);
   const toggleActive = (id) => setUsers((us) => us.map((u) => (u.id === id ? { ...u, active: !u.active } : u)));
   const addUser = (form) => {
     setUsers((us) => [
       ...us,
-      { id: uid("u"), name: form.name, role: form.role, username: form.username, phone: form.phone, active: true, projectIds: ["p1"], teamId: form.role === "supervisor" ? "t1" : undefined },
+      { id: uid("u"), name: form.name, role: form.role, username: form.username, phone: form.phone, active: true, projectIds: form.projectIds, teamId: form.role === "supervisor" ? "t1" : undefined },
     ]);
     setShowAdd(false);
   };
   const roleLabel = { admin: "Admin", manager: "Manager", supervisor: "Supervisor" };
+  const projectNames = (ids) => ids.map((id) => projects.find((p) => p.id === id)?.name).filter(Boolean);
   return (
     <div>
       <SectionTitle icon={Users} title="Team & Access" subtitle="Everyone who can log in, and what they can access. Labourers are never added here \u2014 they're just numbers Supervisors enter." />
@@ -656,7 +840,7 @@ function AdminTeam({ users, setUsers }) {
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Username</th>
               <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3">Project</th>
+              <th className="px-4 py-3">Project(s)</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -668,7 +852,9 @@ function AdminTeam({ users, setUsers }) {
                 <td className="px-4 py-2.5"><Badge tone="navy">{roleLabel[u.role]}</Badge></td>
                 <td className="px-4 py-2.5 text-slate-500">{u.username}</td>
                 <td className="px-4 py-2.5 text-slate-500">{u.phone || "\u2014"}</td>
-                <td className="px-4 py-2.5 text-slate-500">KTTRL \u2013 Section 1</td>
+                <td className="px-4 py-2.5 text-slate-500">
+                  {u.role === "admin" ? "All projects" : projectNames(u.projectIds || []).join(", ") || "\u2014"}
+                </td>
                 <td className="px-4 py-2.5">
                   <Badge tone={u.active ? "green" : "red"}>{u.active ? "Active" : "Inactive"}</Badge>
                 </td>
@@ -684,7 +870,7 @@ function AdminTeam({ users, setUsers }) {
           </tbody>
         </table>
       </Card>
-      {showAdd && <AddEmployeeModal onClose={() => setShowAdd(false)} onSave={addUser} />}
+      {showAdd && <AddEmployeeModal onClose={() => setShowAdd(false)} onSave={addUser} projects={projects} defaultProjectId={currentProjectId} />}
     </div>
   );
 }
@@ -726,21 +912,24 @@ function AdminApprovalsSnapshot({ data }) {
 /* ============================== MANAGER VIEWS ============================== */
 
 function entrySummary(kind, e, ctx) {
+  const project = ctx.projects.find((p) => p.id === e.projectId) || ctx.projects[0];
+  const tag = ctx.projects.length > 1 ? `[${project?.name}] ` : "";
   if (kind === "measurement") {
-    const item = ctx.project.boqItems.find((b) => b.id === e.boqItemId);
-    return `${item?.code} \u00b7 ${item?.desc} \u2014 L${e.values.f_len || 0} \u00d7 B${e.values.f_brd || 0}${e.values.f_hgt ? " \u00d7 H" + e.values.f_hgt : ""}`;
+    const item = project?.boqItems.find((b) => b.id === e.boqItemId);
+    return `${tag}${item?.code} \u00b7 ${item?.desc} \u2014 L${e.values.f_len || 0} \u00d7 B${e.values.f_brd || 0}${e.values.f_hgt ? " \u00d7 H" + e.values.f_hgt : ""}`;
   }
   if (kind === "labour") {
     const team = ctx.teams.find((t) => t.id === e.teamId);
-    return `${team?.name} \u2014 Mastri ${e.values.f_mastri || 0}, Helper ${e.values.f_helper || 0}${e.values.f_ot ? ", OT " + e.values.f_ot + "h" : ""}`;
+    return `${tag}${team?.name} \u2014 Mastri ${e.values.f_mastri || 0}, Helper ${e.values.f_helper || 0}${e.values.f_ot ? ", OT " + e.values.f_ot + "h" : ""}`;
   }
   if (kind === "equipment") {
     const eq = ctx.equipmentList.find((x) => x.id === e.equipmentId);
-    return `${eq?.name} \u2014 ${e.values.f_qty || 0} used`;
+    const fuel = e.values.f_fuel_amt ? `, fuel \u20b9${e.values.f_fuel_amt}` : "";
+    return `${tag}${eq?.name} \u2014 ${e.values.f_qty || 0} used${fuel}`;
   }
   if (kind === "material") {
     const mt = ctx.materialsList.find((x) => x.id === e.materialId);
-    return `${mt?.name} \u2014 ${e.values.f_mqty || 0} used`;
+    return `${tag}${mt?.name} \u2014 ${e.values.f_mqty || 0} used`;
   }
   return "";
 }
@@ -765,16 +954,17 @@ function ApprovalRow({ kind, entry, ctx, onApprove, onSendBack, users }) {
   );
 }
 
-function ManagerQueue({ data, users, setData, ctx }) {
+function ManagerQueue({ data, users, setData, ctx, myProjectIds }) {
   const setStatus = (kind, id, status) => {
     const keyMap = { measurement: "measurementEntries", labour: "labourEntries", equipment: "equipmentEntries", material: "materialEntries" };
     setData((d) => ({ ...d, [keyMap[kind]]: d[keyMap[kind]].map((e) => (e.id === id ? { ...e, status } : e)) }));
   };
+  const scoped = (list) => list.filter((e) => myProjectIds.includes(e.projectId));
   const groups = [
-    { kind: "measurement", label: "Site measurements", icon: Ruler, list: data.measurementEntries },
-    { kind: "labour", label: "Labour attendance", icon: HardHat, list: data.labourEntries },
-    { kind: "equipment", label: "Equipment / vehicles", icon: Truck, list: data.equipmentEntries },
-    { kind: "material", label: "Materials", icon: Package, list: data.materialEntries },
+    { kind: "measurement", label: "Site measurements", icon: Ruler, list: scoped(data.measurementEntries) },
+    { kind: "labour", label: "Labour attendance", icon: HardHat, list: scoped(data.labourEntries) },
+    { kind: "equipment", label: "Equipment / vehicles", icon: Truck, list: scoped(data.equipmentEntries) },
+    { kind: "material", label: "Materials", icon: Package, list: scoped(data.materialEntries) },
   ];
   const anyPending = groups.some((g) => g.list.some((e) => e.status === "pending"));
   return (
@@ -806,11 +996,11 @@ function ManagerQueue({ data, users, setData, ctx }) {
   );
 }
 
-function ManagerWages({ data, setData, teams }) {
+function ManagerWages({ data, setData, teams, project }) {
   const team = teams[0];
   const [form, setForm] = useState({ weekLabel: "25\u201331 Jul 2026", mastriRate: 1100, helperRate: 800, foodRate: 300, advance: 0, deduct: 0, tds: 0 });
 
-  const approvedThisWeek = data.labourEntries.filter((e) => e.status === "approved" && e.teamId === team.id);
+  const approvedThisWeek = data.labourEntries.filter((e) => e.status === "approved" && e.teamId === team.id && e.projectId === project.id);
   const mastriCount = approvedThisWeek.reduce((s, e) => s + (Number(e.values.f_mastri) || 0), 0);
   const helperCount = approvedThisWeek.reduce((s, e) => s + (Number(e.values.f_helper) || 0), 0);
   const foodCount = approvedThisWeek.reduce((s, e) => s + (Number(e.values.f_food) || 0), 0);
@@ -827,7 +1017,7 @@ function ManagerWages({ data, setData, teams }) {
       ...d,
       wageSettlements: [
         ...d.wageSettlements,
-        { id: uid("ws"), teamId: team.id, weekLabel: form.weekLabel, mastriCount, helperCount, foodCount, mastriRate: form.mastriRate, helperRate: form.helperRate, foodRate: form.foodRate, advance: Number(form.advance), deduct: Number(form.deduct), tds: Number(form.tds), total: finalPayment },
+        { id: uid("ws"), projectId: project.id, teamId: team.id, weekLabel: form.weekLabel, mastriCount, helperCount, foodCount, mastriRate: form.mastriRate, helperRate: form.helperRate, foodRate: form.foodRate, advance: Number(form.advance), deduct: Number(form.deduct), tds: Number(form.tds), total: finalPayment },
       ],
     }));
   };
@@ -878,7 +1068,7 @@ function ManagerWages({ data, setData, teams }) {
         </Card>
       </div>
 
-      {data.wageSettlements.length > 0 && (
+      {data.wageSettlements.filter((w) => w.projectId === project.id).length > 0 && (
         <Card className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -887,7 +1077,7 @@ function ManagerWages({ data, setData, teams }) {
               </tr>
             </thead>
             <tbody>
-              {data.wageSettlements.map((w) => (
+              {data.wageSettlements.filter((w) => w.projectId === project.id).map((w) => (
                 <tr key={w.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-2.5">{w.weekLabel}</td>
                   <td className="px-4 py-2.5">{w.mastriCount}</td>
@@ -908,7 +1098,7 @@ function ManagerProgress({ project, data }) {
   const { perItem } = computeIncome(project, data.measurementEntries);
   return (
     <div>
-      <SectionTitle icon={TrendingUp} title="Project Progress" subtitle="Read-only view of contract completion for KTTRL \u2013 Section 1." />
+      <SectionTitle icon={TrendingUp} title="Project Progress" subtitle={`Read-only view of contract completion for ${project.name}.`} />
       <Card className="p-5 space-y-3">
         {perItem.map((it) => {
           const pct = Math.min(100, Math.round((it.totalQty / it.contractQty) * 100));
@@ -966,7 +1156,7 @@ function SupervisorEntry({ user, project, teams, equipmentList, materialsList, f
 
   return (
     <div>
-      <SectionTitle icon={ClipboardList} title="New Entry" subtitle={`Logging for KTTRL \u2013 Section 1, ${todayStr()}. Your Manager reviews this before it counts.`} />
+      <SectionTitle icon={ClipboardList} title="New Entry" subtitle={`Logging for ${project.name}, ${todayStr()}. Your Manager reviews this before it counts.`} />
       <div className="flex gap-1 mb-4 flex-wrap">
         {tabs.map((t) => (
           <button
@@ -1075,9 +1265,10 @@ export default function KumarCoDemo() {
   const [screen, setScreen] = useState("picker");
   const [currentUser, setCurrentUser] = useState(null);
   const [active, setActive] = useState(null);
+  const [currentProjectId, setCurrentProjectId] = useState(null);
 
   const [users, setUsers] = useState(seedUsers);
-  const [project, setProject] = useState(seedProject);
+  const [projects, setProjects] = useState(seedProjects);
   const [fieldConfig, setFieldConfig] = useState(seedFieldConfig);
   const [teams] = useState(seedTeams);
   const [equipmentList] = useState(seedEquipment);
@@ -1091,11 +1282,12 @@ export default function KumarCoDemo() {
     wageSettlements: seedWageSettlements,
   });
 
-  const ctx = useMemo(() => ({ project, teams, equipmentList, materialsList }), [project, teams, equipmentList, materialsList]);
+  const ctx = useMemo(() => ({ projects, teams, equipmentList, materialsList }), [projects, teams, equipmentList, materialsList]);
 
   const login = (u) => {
     setCurrentUser(u);
     setActive(NAV[u.role][0].key);
+    setCurrentProjectId(u.role === "admin" ? projects[0].id : u.projectIds[0]);
     setScreen("app");
   };
   const logout = () => {
@@ -1107,22 +1299,38 @@ export default function KumarCoDemo() {
     return <RolePicker users={users} onPick={login} />;
   }
 
+  const myProjects = currentUser.role === "admin" ? projects : projects.filter((p) => currentUser.projectIds.includes(p.id));
+  const myProjectIds = myProjects.map((p) => p.id);
+  const currentProject = projects.find((p) => p.id === currentProjectId) || myProjects[0];
+
   const dataForExpense = { ...data, equipmentList, materialsList };
 
+  const setCurrentProjectFields = (updater) =>
+    setProjects((ps) => ps.map((p) => (p.id === currentProject.id ? updater(p) : p)));
+
   return (
-    <Shell user={currentUser} onLogout={logout} active={active} setActive={setActive}>
-      {currentUser.role === "admin" && active === "overview" && <AdminOverview project={project} data={dataForExpense} />}
-      {currentUser.role === "admin" && active === "rates" && <AdminRates project={project} setProject={setProject} />}
+    <Shell
+      user={currentUser}
+      onLogout={logout}
+      active={active}
+      setActive={setActive}
+      myProjects={myProjects}
+      currentProjectId={currentProject.id}
+      onSwitchProject={setCurrentProjectId}
+    >
+      {currentUser.role === "admin" && active === "overview" && <AdminOverview project={currentProject} data={dataForExpense} />}
+      {currentUser.role === "admin" && active === "portfolio" && <AdminPortfolio projects={projects} data={dataForExpense} />}
+      {currentUser.role === "admin" && active === "rates" && <AdminRates project={currentProject} setProject={setCurrentProjectFields} />}
       {currentUser.role === "admin" && active === "fields" && <AdminFieldSettings fieldConfig={fieldConfig} setFieldConfig={setFieldConfig} />}
-      {currentUser.role === "admin" && active === "team" && <AdminTeam users={users} setUsers={setUsers} />}
+      {currentUser.role === "admin" && active === "team" && <AdminTeam users={users} setUsers={setUsers} projects={projects} currentProjectId={currentProject.id} />}
       {currentUser.role === "admin" && active === "approvals" && <AdminApprovalsSnapshot data={data} />}
 
-      {currentUser.role === "manager" && active === "queue" && <ManagerQueue data={data} users={users} setData={setData} ctx={ctx} />}
-      {currentUser.role === "manager" && active === "wages" && <ManagerWages data={data} setData={setData} teams={teams} />}
-      {currentUser.role === "manager" && active === "progress" && <ManagerProgress project={project} data={data} />}
+      {currentUser.role === "manager" && active === "queue" && <ManagerQueue data={data} users={users} setData={setData} ctx={ctx} myProjectIds={myProjectIds} />}
+      {currentUser.role === "manager" && active === "wages" && <ManagerWages data={data} setData={setData} teams={teams} project={currentProject} />}
+      {currentUser.role === "manager" && active === "progress" && <ManagerProgress project={currentProject} data={data} />}
 
       {currentUser.role === "supervisor" && active === "entry" && (
-        <SupervisorEntry user={currentUser} project={project} teams={teams} equipmentList={equipmentList} materialsList={materialsList} fieldConfig={fieldConfig} setData={setData} />
+        <SupervisorEntry user={currentUser} project={currentProject} teams={teams} equipmentList={equipmentList} materialsList={materialsList} fieldConfig={fieldConfig} setData={setData} />
       )}
       {currentUser.role === "supervisor" && active === "mine" && <SupervisorMine user={currentUser} data={data} ctx={ctx} />}
     </Shell>
