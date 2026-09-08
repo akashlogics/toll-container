@@ -1,50 +1,46 @@
-# Kumar & Co. — Project & Labour Management
+# Kumar & Co. — Construction Operations System
 
-This package combines the supplied Supabase backend with a React/Vite frontend that follows the approved Netlify demo structure. The demo role picker has been replaced with real Supabase email/password authentication and role-based workspaces.
+This package combines the Supabase backend with a requirements-driven React/Vite frontend for a construction contractor. It is no longer a role-picker demo. The workflow is organized around real work: create projects, create employee logins, maintain a named Mastri/Helper roster, record site measurements, record daily labour, review submissions, and prepare project and wage reports.
 
-## Included
+## What the client can do
 
-- React/Vite frontend with Admin, Manager, and Supervisor workspaces.
-- Supabase authentication using `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-- Admin views for overview, Projects & Rates, Field Settings, Team & Access, and approval snapshots.
-- Manager views for approvals, wage settlements, and project progress.
-- Supervisor views for named-worker labour entry, entry history, and project documents.
-- Existing `schema.sql`, `lib/api.js`, Supabase client, and `create-user` Edge Function.
-- `netlify.toml` for Netlify deployment.
+The contractor/admin can create projects such as a toll-road section, assign employees to projects, create manager and supervisor logins, maintain the named worker roster, review progress, and view operational reports. A manager can review and approve measurements and attendance. A site supervisor can enter named-worker attendance and site measurements from the field. The measurement form follows the supplied register: item, room/description, No, L, B, H, calculated quantity, rate, and amount. The labour workflow follows the supplied weekly sheet: Mastri, Helpers, overtime, food allowance, advances, deductions, TDS, and final payment calculations.
 
-## Local setup
+## Supabase setup
 
-1. Install Node.js 18+.
-2. Create a Supabase project.
-3. In the Supabase SQL editor, run `schema.sql` from this folder.
-4. Create two private Storage buckets named `entry-photos` and `project-documents`.
-5. Deploy the Edge Function:
+1. Create or open the Supabase project.
+2. Run `schema.sql` in the Supabase SQL Editor if the database is new.
+3. Run `schema_v2.sql` after `schema.sql`. This adds in-app alerts and reporting support.
+4. Create private Storage buckets named `entry-photos` and `project-documents`.
+5. Deploy the employee-creation Edge Function:
 
    ```bash
    supabase functions deploy create-user
    ```
 
-6. Copy `.env.example` to `.env` and fill in the Project URL and anon public key. Never put the service-role key in `.env` or browser code.
-7. Install and run the frontend:
+6. Copy `.env.example` to `.env` and fill in the Supabase Project URL and anon public key. Never put the service-role key in browser code.
+7. Create the first user in Supabase Authentication, then add a matching `profiles` row with role `admin` and `active = true`. Create at least one project before inviting employees.
 
-   ```bash
-   npm install
-   npm run dev
-   ```
+## Local setup
 
-8. Open the local URL printed by Vite. Create the first user in Supabase Authentication, then insert that user’s row in `profiles` with role `admin`. Add a project and membership row before testing the workspace.
+```bash
+npm install
+npm run dev
+```
 
-## Production build
+For a production build:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-For Netlify, set the same two `VITE_` variables in Site configuration → Environment variables. The included `netlify.toml` builds `dist` and supports client-side routes.
+Netlify can use the included `netlify.toml`; set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the site environment variables.
 
-## Important security notes
+## Security
 
-The browser uses only the Supabase anon public key and the database’s Row Level Security policies. The service-role key belongs only in the Supabase Edge Function secret environment. Do not commit `.env`, passwords, or service-role credentials.
+The frontend only uses the anon public key. Access is restricted by Supabase Row Level Security policies. The service-role key must remain a Supabase Edge Function secret. The two Storage buckets should remain private. The client’s original schema already restricts project membership, approval permissions, and admin-only configuration; keep those policies enabled in production.
 
-The schema tracks labour by named worker. This is intentional: it permits hours, overtime, and food allowance to be correctly calculated when a worker splits time across projects.
+## Source reference
+
+The requirements archive included a seven-page site measurement PDF, a weekly labour sheet, a daily-progress Excel workbook for `KTTRL SECTION 1`, and screenshots of an operational measurement-sheet system. Those references informed the current navigation and data-entry fields.
