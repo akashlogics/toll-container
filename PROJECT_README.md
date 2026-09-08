@@ -44,3 +44,13 @@ The frontend only uses the anon public key. Access is restricted by Supabase Row
 ## Source reference
 
 The requirements archive included a seven-page site measurement PDF, a weekly labour sheet, a daily-progress Excel workbook for `KTTRL SECTION 1`, and screenshots of an operational measurement-sheet system. Those references informed the current navigation and data-entry fields.
+
+## Employee accounts and management actions
+
+The Employees page is for manager and supervisor logins. Enter an email and optionally enter an initial password of at least eight characters. If the password is left blank, the Edge Function generates a temporary password and displays it once to the admin. Relay that password securely to the employee; do not place it in public chat or source code. Redeploy the `create-user` Edge Function after updating it:
+
+```bash
+supabase functions deploy create-user
+```
+
+Projects can be archived from the Projects page. Employees and named workers can be activated or deactivated without destroying historical records. BOQ items can be deleted, but Supabase may reject deletion when measurements already reference the item; this protects project history. There is intentionally no hard-delete button for employees, workers, or projects because historical attendance, approvals, and wage records must remain auditable.

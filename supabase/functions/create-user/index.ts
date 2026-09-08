@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Only an active admin can add employees" }), { status: 403 });
     }
 
-    const { name, role, phone, email, projectIds } = await req.json();
+    const { name, role, phone, email, password, projectIds } = await req.json();
 
     if (!name || !role || !email || !Array.isArray(projectIds) || projectIds.length === 0) {
       return new Response(JSON.stringify({ error: "name, role, email and at least one projectId are required" }), { status: 400 });
@@ -56,7 +56,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
     );
 
-    const tempPassword = crypto.randomUUID().slice(0, 12);
+    // The admin may provide an initial password for handoff. If omitted,
+    // generate one and return it once so the admin can securely relay it.
+    if (password && (typeof password !== "string" || password.length < 8)) {
+      return new Response(JSON.stringify({ error: "password must be at least 8 characters" }), { status: 400 });
+    }
+    const tempPassword = password || crypto.randomUUID().slice(0, 12);
 
     const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
       email,
